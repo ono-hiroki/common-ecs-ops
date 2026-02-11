@@ -1,0 +1,4 @@
+bucket="terraform-state-dev-verification-hono"
+key="terraform.tfstate"
+encrypt=true
+region="ap-northeast-1"

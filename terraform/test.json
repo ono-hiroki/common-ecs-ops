@@ -1,0 +1,15 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "php",
+      "image": "old-image",
+      "command": ["php","artisan","migrate","--force"],
+      "essential": true
+    },
+    {
+      "name": "worker",
+      "image": "worker-image",
+      "essential": false
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+# Taskfile.yaml
+version: '3'
+
+includes:
+  dev:tf:
+    taskfile: './Taskfile.common.yaml'
+    vars:
+      ENV: dev
+
+  stg:tf:
+    taskfile: './Taskfile.common.yaml'
+    vars:
+      ENV: stg
+
+  prd:tf:
+    taskfile: './Taskfile.common.yaml'
+    vars:
+      ENV: prd

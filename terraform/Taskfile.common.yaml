@@ -1,0 +1,98 @@
+# Taskfile.common.yaml
+version: '3'
+
+vars:
+  # ─────────────────────────────────────
+  # Terraform設定ファイル名とパス
+  # ─────────────────────────────────────
+  BACKEND_FILE_NAME:       '.tfbackend'
+  VARS_FILE_NAME:          '.tfvars'
+  PROFILE_FILE_NAME:       '.profile'
+  LIVE_DIR_NAME:           'environments'
+  CASE_DIR_NAME:           'case'
+  BACKEND_PATH:            '{{ .ROOT_DIR }}/{{ .LIVE_DIR_NAME }}/{{ .ENV }}/{{ .BACKEND_FILE_NAME }}'
+  VARS_FILE_PATH:          '{{ .ROOT_DIR }}/{{ .LIVE_DIR_NAME }}/{{ .ENV }}/{{ .VARS_FILE_NAME }}'
+  AWS_PROFILE_FILE_PATH:   '{{ .ROOT_DIR }}/{{ .LIVE_DIR_NAME }}/{{ .ENV }}/{{ .PROFILE_FILE_NAME }}'
+  CASE_DIR_PATH:           '{{ .ROOT_DIR }}/{{ .CASE_DIR_NAME }}/{{ .ENV }}'
+
+  # ─────────────────────────────────────
+  # AWSプロファイル読み込みスニペット
+  # ─────────────────────────────────────
+  PROFILE_INIT: |
+    # プロファイルファイル存在確認
+    if [ ! -f "{{ .AWS_PROFILE_FILE_PATH }}" ]; then
+      echo "Error: プロファイルファイルが見つかりません: {{ .AWS_PROFILE_FILE_PATH }}" >&2
+      exit 1
+    fi
+    # プロファイルを読み込み
+    source "{{ .AWS_PROFILE_FILE_PATH }}"
+    # 読み込み後に環境変数が設定されているか確認
+    if [ -z "${AWS_PROFILE:-}" ]; then
+      echo "Error: {{ .AWS_PROFILE_FILE_PATH }} 内で AWS_PROFILE が設定されていません" >&2
+      exit 1
+    fi
+
+tasks:
+  init:
+    internal: false
+    desc: 'Terraform init ({{ .ENV }})'
+    cmds:
+      - |
+        set -eux
+        {{ .PROFILE_INIT }}
+        terraform -chdir="{{ .CASE_DIR_PATH }}" init \
+          -reconfigure -upgrade \
+          -backend-config="{{ .BACKEND_PATH }}"
+
+  plan:
+    desc: 'Terraform plan ({{ .ENV }})'
+    deps: [init]
+    cmds:
+      - |
+        set -eux
+        {{ .PROFILE_INIT }}
+        terraform -chdir="{{ .CASE_DIR_PATH }}" plan \
+          -var-file="{{ .VARS_FILE_PATH }}"
+
+  apply:
+    desc: 'Terraform apply ({{ .ENV }})'
+    deps: [init]
+    cmds:
+      - |
+        set -eux
+        {{ .PROFILE_INIT }}
+        terraform -chdir="{{ .CASE_DIR_PATH }}" apply \
+          -var-file="{{ .VARS_FILE_PATH }}"
+
+  destroy:
+    desc: 'Terraform destroy ({{ .ENV }})'
+    cmds:
+      - |
+        set -eux
+        {{ .PROFILE_INIT }}
+        terraform -chdir="{{ .CASE_DIR_PATH }}" destroy \
+          -var-file="{{ .VARS_FILE_PATH }}"
+
+  state:pull:
+    desc: 'Terraform state pull ({{ .ENV }})'
+    cmds:
+      - |
+        set -eux
+        {{ .PROFILE_INIT }}
+        terraform -chdir="{{ .CASE_DIR_PATH }}" state pull > "{{ .CASE_DIR_PATH }}/terraform.tfstate"
+
+  console:
+    desc: 'Terraform console ({{ .ENV }})'
+    cmds:
+      - |
+        set -eux
+        {{ .PROFILE_INIT }}
+        terraform -chdir="{{ .CASE_DIR_PATH }}" console
+
+  state:list:
+    desc: 'Terraform state list ({{ .ENV }})'
+    cmds:
+      - |
+        set -eux
+        {{ .PROFILE_INIT }}
+        terraform -chdir="{{ .CASE_DIR_PATH }}" state list

@@ -1,0 +1,23 @@
+[
+  {
+    "name": "php",
+    "image": "${aws_account_id}.dkr.ecr.${region}.amazonaws.com/${env}-php:latest",
+    "command": ["php", "artisan", "migrate", "--force"],
+    "essential": true,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-region": "${region}",
+        "awslogs-stream-prefix": "migrate",
+        "awslogs-group": "/${env}/migrate",
+        "awslogs-datetime-format": "\\[%Y-%m-%d %H:%M:%S\\]"
+      }
+    },
+    "environment": [
+      {
+        "name": "APP_ENV",
+        "value": "${app_env}"
+      }
+    ]
+  }
+]

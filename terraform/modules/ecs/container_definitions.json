@@ -1,0 +1,74 @@
+[
+  {
+    "name": "nginx",
+    "image": "${nginx_image}",
+    "essential": true,
+    "portMappings": [
+      {
+        "protocol": "tcp",
+        "containerPort": 80
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${nginx_log_group_path}",
+        "awslogs-region": "ap-northeast-1",
+        "awslogs-stream-prefix": "ecs"
+      }
+    },
+    "dependsOn": [
+      {
+        "containerName": "php-fpm",
+        "condition": "START"
+      }
+    ],
+    "mountPoints": [
+      {
+        "sourceVolume": "php-fpm-socket",
+        "containerPath": "/var/run/php-fpm"
+      },
+      {
+        "sourceVolume": "laravel-public",
+        "containerPath": "/var/www/laravel/public"
+      }
+    ],
+    "secrets": ${jsonencode(secrets)},
+    "environment": ${jsonencode(environments)}
+  },
+  {
+    "name": "php-fpm",
+    "image": "${php_image}",
+    "essential": true,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${php_fpm_log_group_path}",
+        "awslogs-region": "ap-northeast-1",
+        "awslogs-stream-prefix": "ecs"
+      }
+    },
+    "mountPoints": [
+      {
+        "sourceVolume": "php-fpm-socket",
+        "containerPath": "/var/run/php-fpm"
+      },
+      {
+        "sourceVolume": "laravel-public",
+        "containerPath": "/var/www/laravel/public"
+      }
+    ],
+    "command": [
+      "sh",
+      "-c",
+      "php artisan config:clear && php artisan config:cache && php-fpm"
+    ],
+    "secrets": ${jsonencode(secrets)},
+    "environment": ${jsonencode(environments)},
+    "volumes": [
+      {
+        "name": "laravel-public"
+      }
+    ]
+  }
+]
